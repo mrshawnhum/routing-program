@@ -5,6 +5,7 @@ class CreateHashTable:
         for i in range(initial_capacity):
             self.table.append([])
 
+    '''
     # Insert new item into hash table
     #Original
     def insert(self, item):
@@ -13,6 +14,7 @@ class CreateHashTable:
 
         # add the item to the end of the bucket list
         bucket_list.append(item)
+    '''
 
     # Insert and update
     def insert(self, key, item):
@@ -31,6 +33,7 @@ class CreateHashTable:
         bucket_list.append(key_value)
         return True
 
+    '''
     #Original
     def lookup(self, key):
         # get the bucket list where this key would be
@@ -45,6 +48,7 @@ class CreateHashTable:
         else:
             # the key is not found
             return None
+    '''
 
     def lookup(self, key):
         bucket = hash(key) % len(self.table)
@@ -56,6 +60,7 @@ class CreateHashTable:
                 return kv[1]
         return None
 
+    '''
     # Removes an item with matching key from the hash table
     #Original
     def remove(self, key):
@@ -66,6 +71,8 @@ class CreateHashTable:
         # remove the item from the bucket list if it is present
         if key in bucket_list:
             bucket_list.remove(key)
+
+    '''
 
     def remove(self, key):
         bucket = hash(key) % len(self.table)
