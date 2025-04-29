@@ -18,12 +18,16 @@ def main():
     testTable.insert(bootStrap[1][0], bootStrap[1][1])
 
     print("\nSearch")
-    print(testTable.search(1))
-    print(testTable.search(2))
-    print(testTable.search(11))
+    print(testTable.lookup(1))
+    print(testTable.lookup(2))
+    print(testTable.lookup(11))
 
     print("\nUpdate")
     testTable.insert(1, "new tester")
+    print(testTable.table)
+
+    print("\nRemove")
+    testTable.remove(1)
     print(testTable.table)
 
 

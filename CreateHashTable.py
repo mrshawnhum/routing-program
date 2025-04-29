@@ -1,4 +1,4 @@
-# Source: C950 - Webinar-1 - Let’s Go Hashing - Complete Python Code 2024
+# Source citation: C950 - Webinar-1 - Let’s Go Hashing - Complete Python Code 2024
 class CreateHashTable:
     def __init__(self, initial_capacity=10):
         self.table = []
@@ -32,11 +32,10 @@ class CreateHashTable:
         return True
 
     #Original
-    def search(self, key):
+    def lookup(self, key):
         # get the bucket list where this key would be
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
-        print(bucket_list)
 
         # search for the key in the bucket list
         if key in bucket_list:
@@ -47,7 +46,7 @@ class CreateHashTable:
             # the key is not found
             return None
 
-    def search(self, key):
+    def lookup(self, key):
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
 
@@ -56,3 +55,24 @@ class CreateHashTable:
             if kv[0] == key:
                 return kv[1]
         return None
+
+    # Removes an item with matching key from the hash table
+    #Original
+    def remove(self, key):
+        # get the bucket list where this item will be removed from
+        bucket = hash(key) % len(self.table)
+        bucket_list = self.table[bucket]
+
+        # remove the item from the bucket list if it is present
+        if key in bucket_list:
+            bucket_list.remove(key)
+
+    def remove(self, key):
+        bucket = hash(key) % len(self.table)
+        bucket_list = self.table[bucket]
+
+        # remove the item from the bucket list if present
+        for kv in bucket_list:
+            if kv[0] == key:
+                bucket_list.remove(kv)
+                break
