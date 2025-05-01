@@ -31,18 +31,60 @@ def load_packages(filename="WGUPS-data.csv"):
 
     return package_table, test_all_packages
 
+def load_distances_and_addresses(filename):
+    with open(filename, newline='') as csvfile:
+        # read the data
+        reader = csv.reader(csvfile)
+        next(reader)
+        rows = list(reader)
+
+        # find addresses
+        addresses = [ row[1].rsplit("(", 1)[0].strip() for row in rows ]
+
+        # find distances
+        num = len(addresses)
+        distance_matrix = [
+            [float(x) if x else None for x in row[2 : 2 + num]]
+            for row in rows
+        ]
+
+        return addresses, distance_matrix
+# load distance and address list
+address_list, distance_list = load_distances_and_addresses("WGUPS-distance.csv")
+
+def distance_between(address1, address2):
+
+    x = address_list.index(address1)
+    y = address_list.index(address2)
+
+    distance = distance_list[x][y]
+    if distance is None:
+        distance = distance_list[y][x]
+
+    return distance
 
 
 def main():
+    table = load_packages()[0]
 
+    print("test package")
+    testPkg = table.lookup(7)
+    print(testPkg.address)
+    print(table.lookup(1).address)
 
+    print("test address/distance")
+    print(address_list[2])
+    print(distance_list[2])
+
+    print("The distance of two points is: " + str(distance_between(testPkg.address, table.lookup(1).address)))
+
+    '''
     table, test_pkg_list = load_packages()
 
     print("All packages")
     for pkg in test_pkg_list:
         print(pkg.ID, pkg.status)
 
-    '''
     bootStrap = [
         [1, "test1"],
         [2, "test2"],
