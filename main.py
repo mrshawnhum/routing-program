@@ -1,7 +1,8 @@
-# Class file imports
+# Student ID: 012214405
+
+# Imports
 from CreateHashTable import CreateHashTable
 from Package import Package
-# imports
 import csv
 from datetime import datetime
 
@@ -34,11 +35,13 @@ def load_packages(filename="WGUPS-data.csv"):
 
 def main():
 
+
     table, test_pkg_list = load_packages()
 
     print("All packages")
     for pkg in test_pkg_list:
         print(pkg.ID, pkg.status)
+
     '''
     bootStrap = [
         [1, "test1"],
