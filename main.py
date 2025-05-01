@@ -6,7 +6,7 @@ from Package import Package
 import csv
 from datetime import datetime
 
-def load_packages(filename="WGUPS-data.csv"):
+def load_packages(filename="CSV/WGUPS-data.csv"):
     package_table = CreateHashTable(initial_capacity=40)
     test_all_packages = []
 
@@ -50,7 +50,7 @@ def load_distances_and_addresses(filename):
 
         return addresses, distance_matrix
 # load distance and address list
-address_list, distance_list = load_distances_and_addresses("WGUPS-distance.csv")
+address_list, distance_list = load_distances_and_addresses("CSV/WGUPS-distance.csv")
 
 def distance_between(address1, address2):
 
