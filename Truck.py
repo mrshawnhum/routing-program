@@ -2,7 +2,7 @@
 from datetime import timedelta
 
 
-class Truck():
+class Truck:
     def __init__(self, capacity, speed, load, mileage, current_address, departure_time):
         self.capacity = capacity
         self.speed = speed
