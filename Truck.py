@@ -3,7 +3,8 @@ from datetime import timedelta
 
 
 class Truck:
-    def __init__(self, capacity, speed, load, mileage, current_address, departure_time):
+    def __init__(self, ID, capacity, speed, load, mileage, current_address, departure_time):
+        self.ID = ID
         self.capacity = capacity
         self.speed = speed
         self.load = load
@@ -14,10 +15,6 @@ class Truck:
     def __str__(self):
         return "%s %s %s %s %s %s" % (self.capacity, self.speed, self.load, self.mileage,
                                          self.departure_time, self.current_address)
-
-    @property
-    def remaining_capacity(self):
-        return self.capacity - len(self.load)
 
     def travel_time(self, miles):
         hours = miles / self.speed
