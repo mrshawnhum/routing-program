@@ -14,7 +14,7 @@ class Truck:
         self.time = datetime.combine(datetime.today(), departure_time)
 
     def __str__(self):
-        return "%s %s %s %s %s %s" % (self.capacity, self.speed, self.load, self.mileage,
+        return "%s %s %s %s %s %s %s" % (self.ID, self.capacity, self.speed, self.load, self.mileage,
                                          self.departure_time, self.current_address)
 
     def travel_time(self, miles):

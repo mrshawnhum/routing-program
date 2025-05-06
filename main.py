@@ -235,7 +235,7 @@ def main():
         print("\nWhat would you like to do?")
         print("1. View All Packages")
         print("2. Look Up a Package")
-        print("3. View Summary")
+        print("3. View Truck Summary")
         print("4. Exit")
 
     def current_time() -> datetime:
@@ -267,7 +267,20 @@ def main():
                 print(str(package))
 
             case "3":
-                break
+                convert_time = current_time()
+                try:
+                    truck_locator = input("Enter your truck ID: ").strip()
+                    found_truck = None
+                    for truck in fleet:
+                        if truck.ID == int(truck_locator):
+                            found_truck = truck
+                            break
+                    for pkg in found_truck.load:
+                        package = package_hash_table.lookup(pkg)
+                        package.update_status(convert_time)
+                    print(str(found_truck))
+                except ValueError:
+                    raise ValueError("Please enter a valid truck ID")
 
             case "4":
                 print("Thank you for using WGUPS Routing Program!")
