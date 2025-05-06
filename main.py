@@ -231,6 +231,7 @@ def main():
 
     # UI
     print("Welcome to WGUPS Routing Program!")
+    print("The total mileage driven is: " + str(truck1.mileage + truck2.mileage + truck3.mileage))
     def main_menu():
         print("\nWhat would you like to do?")
         print("1. View All Packages")
@@ -244,7 +245,6 @@ def main():
             t = datetime.strptime(input_raw, "%H:%M").time()
         except ValueError:
             raise ValueError("Please enter a valid time in the format HH:MM")
-
 
         return datetime.combine(datetime.today(), t)
 
