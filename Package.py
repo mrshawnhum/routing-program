@@ -1,3 +1,4 @@
+from datetime import datetime
 # Object class for packages
 class Package:
     def __init__(self, ID, address, city, state, zip_code, deadline, weight, status):
@@ -15,3 +16,11 @@ class Package:
     def __str__(self):
         return "%s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zip_code, self.weight,
                                                self.status)
+
+    def update_status(self, current_time: datetime):
+        if self.arrival_time <= current_time:
+            self.status = "Delivered"
+        elif self.departure_time <= current_time:
+            self.status = "On The Way"
+        else:
+            self.status = "At Hub"

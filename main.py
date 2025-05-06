@@ -10,10 +10,12 @@ from datetime import datetime, time, timedelta
 
 # Global variables
 HUB_ADDRESS = "4001 South 700 East"
+truck1 = Truck(1, 16, [], 0, HUB_ADDRESS, time(8, 00))
+truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 00))
+truck3 = Truck(3, 16, [], 0, HUB_ADDRESS, time(10, 00))
 
 def load_packages(filename="CSV/WGUPS-data.csv"):
     package_table = CreateHashTable(initial_capacity=40)
-    test_all_packages = []
 
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile)
@@ -36,12 +38,14 @@ def load_packages(filename="CSV/WGUPS-data.csv"):
             status = "At Hub"
 
             # build Package objects
-            package = Package(ID, address.strip(), city.strip(), state.strip(), zip_code.strip(), deadline, weight, status)
+            package = Package(ID, address.strip(), city.strip(), state.strip(), zip_code.strip(), deadline, weight,
+                              status)
 
             package_table.insert(ID, package)
-            test_all_packages.append(package)
 
-    return package_table, test_all_packages
+    return package_table
+# load package table
+package_hash_table = load_packages()
 
 def load_distances_and_addresses(filename):
     with open(filename, newline='') as csvfile:
@@ -51,22 +55,24 @@ def load_distances_and_addresses(filename):
         rows = list(reader)
 
         # find addresses
-        addresses = [ row[1].rsplit("(", 1)[0].strip() for row in rows ]
+        addresses = [row[1].rsplit("(", 1)[0].strip() for row in rows]
         addresses[0] = HUB_ADDRESS
 
         # find distances
         num = len(addresses)
         distance_matrix = [
-            [float(x) if x else None for x in row[2 : 2 + num]]
+            [float(x) if x else None for x in row[2: 2 + num]]
             for row in rows
         ]
 
         return addresses, distance_matrix
+
+
 # load distance and address list
 address_list, distance_list = load_distances_and_addresses("CSV/WGUPS-distance.csv")
 
-def distance_between(address1, address2):
 
+def distance_between(address1, address2):
     x = address_list.index(address1)
     y = address_list.index(address2)
 
@@ -76,18 +82,37 @@ def distance_between(address1, address2):
 
     return distance
 
+# Load packages to trucks with hard requirements (delayed, into a certain truck, with certain packages, etc)
+def load_constraint_package():
+    # Loop through all the package IDs
+    for packageID in range(1, 41):
+        # If the package ID match the following numbers, load into truck1
+        if packageID in (13, 14, 15, 16, 19, 20, 21):
+            package = package_hash_table.lookup(packageID)
+            truck1.load.append(package)
+
+        # If the package ID match the following numbers, load into truck2
+        if packageID in (3, 18, 36, 37, 38):
+            package = package_hash_table.lookup(packageID)
+            truck2.load.append(package)
+
+        # If the package ID match the following numbers, load into truck3
+        if packageID in (6, 9, 25, 26, 28, 31, 32):
+            package = package_hash_table.lookup(packageID)
+            truck3.load.append(package)
+
 # convert time to minutes since midnight
 def time_to_minutes(t: time) -> int:
     return t.hour * 60 + t.minute
 
+# Algorithm to assign packages to trucks based on priority, distance, and available space in truck
 def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
-
     # helper function to map package deadline to amount of minutes
     def dl_min(p):
-        return time_to_minutes(p.deadline) if isinstance(p.deadline, time) else 23*60+59
+        return time_to_minutes(p.deadline) if isinstance(p.deadline, time) else 23 * 60 + 59
 
     # filter out packages already loaded into truck
-    preloaded = { p.ID for t in fleet for p in t.load }
+    preloaded = {p.ID for t in fleet for p in t.load}
     pool = [p for p in packages if p.ID not in preloaded]
 
     # Store any package that can't fit
@@ -96,11 +121,11 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
     # assign all deadline-sensitive packages and sort by earliest deadline
     timed = sorted([p for p in pool if isinstance(p.deadline, time)],
                    key=dl_min)
-    print("Timed packages:", [(p.ID, p.deadline) for p in timed])
+    # print("Timed packages:", [(p.ID, p.deadline) for p in timed])
 
     for pkg in timed:
         best = None  # will hold (truck, arrival_min)
-        print("Trying timed:", pkg.ID, pkg.deadline)
+        # print("Trying timed:", pkg.ID, pkg.deadline)
         # skip any truck that is full
         for tr in fleet:
             if len(tr.load) >= tr.capacity:
@@ -128,15 +153,16 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
             tr.next_available_min = arrive
             tr.current_address = pkg.address
             pool.remove(pkg)
-            print(f"-- Assigned pkg {pkg.ID} to Truck {tr.ID} at minute {arrive}")
+            # print(f"-- Assigned pkg {pkg.ID} to Truck {tr.ID} at minute {arrive}")
         else:
-            unassigned.append(pkg) # assumes no truck could handle the deadline
+            unassigned.append(pkg)  # assumes no truck could handle the deadline
 
     # Assign remaining EOD packages
     eod_left = [p for p in pool if not isinstance(p.deadline, time)]
 
+    # loop through remaining packages with the least priority
     for pkg in eod_left:
-        print("Trying eod:", pkg.ID, pkg.deadline)
+        # print("Trying eod:", pkg.ID, pkg.deadline)
         best = None
         for tr in fleet:
             if len(tr.load) >= tr.capacity:
@@ -160,16 +186,93 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
         else:
             unassigned.append(pkg)
 
-    # Return any leftovers that couldn't be assigned
-    return unassigned
+
+# Routing algorithm
+def deliver_packages(truck):
+    not_delivered = []
+    for pkg in truck.load:
+        package = package_hash_table.lookup(pkg.ID)
+        not_delivered.append(package)
+
+    # Clear truck table to load back in order
+    truck.load.clear()
+
+    # Loop until the load is empty
+    while len(not_delivered) > 0:
+        next_available_package = None
+        closest_package_distance = 999.99
+        for pkg in not_delivered:
+            if distance_between(truck.current_address, pkg.address) <= closest_package_distance:
+                next_available_package = pkg
+                closest_package_distance = distance_between(truck.current_address, pkg.address)
+
+        next_available_package.departure_time = truck.time
+        truck.load.append(next_available_package.ID)
+        truck.current_address = next_available_package.address
+        # Remove package from not delivered list
+        not_delivered.remove(next_available_package)
+        # Update miles truck traveled
+        truck.mileage += closest_package_distance
+        # Update departure time and how long it took to travel package
+        truck.time += truck.travel_time(closest_package_distance)
+        next_available_package.arrival_time = truck.time
+        next_available_package.update_status(truck.time)
+        print(f"Delivered: {next_available_package.ID} at {next_available_package.arrival_time.strftime('%H:%M')}")
 
 
 
 def main():
+    fleet = [truck1, truck2, truck3]
+    packages = [pkg for bucket in package_hash_table.table for (_, pkg) in bucket]
+    load_constraint_package()
+    assign_packages_to_trucks(fleet, packages)
+    for truck in fleet:
+        deliver_packages(truck)
 
-    # <--- TEST DATA --->
-    table = load_packages()[0]
+    # UI
+    print("Welcome to WGUPS Routing Program!")
+    def main_menu():
+        print("\nWhat would you like to do?")
+        print("1. View All Packages")
+        print("2. Look Up a Package")
+        print("3. View Summary")
+        print("4. Exit")
 
+    def current_time() -> datetime:
+        input_raw = input("Please enter a time in the format (HH:MM): ").strip()
+        try:
+            t = datetime.strptime(input_raw, "%H:%M").time()
+        except ValueError:
+            raise ValueError("Please enter a valid time in the format HH:MM")
+
+
+        return datetime.combine(datetime.today(), t)
+
+    while True:
+        main_menu()
+        user_input = input("Enter your choice: ").strip()
+        match user_input:
+            case "1":
+                convert_time = current_time()
+                for packageID in range(1, 41):
+                    package = package_hash_table.lookup(packageID)
+                    package.update_status(convert_time)
+                    print(str(package))
+
+            case "2":
+                convert_time = current_time()
+                package_locator = input("Enter your package ID: ").strip()
+                package = package_hash_table.lookup(package_locator)
+                package.update_status(convert_time)
+                print(str(package))
+
+            case "3":
+                break
+
+            case "4":
+                print("Thank you for using WGUPS Routing Program!")
+                break
+    '''
     # Truck 1 preload
     pkg15 = table.lookup(15)
     pkg16 = table.lookup(16)
@@ -213,13 +316,13 @@ def main():
     pkg39 = table.lookup(39)
     pkg40 = table.lookup(40)
 
-    Truck1 = Truck(1, 16, 18, [pkg15, pkg16, pkg13, pkg19, pkg14, pkg20, pkg21], 0, HUB_ADDRESS, time(8, 00))
-    Truck2 = Truck(2, 16, 18, [pkg36, pkg38, pkg37, pkg18, pkg3], 0, HUB_ADDRESS, time(9, 00))
-    Truck3 = Truck(3, 16, 18, [pkg6, pkg25, pkg26, pkg28, pkg31, pkg32, pkg9], 0, HUB_ADDRESS, time(10, 00))
-
+    Truck1 = Truck(1, 16, [pkg15, pkg16, pkg13, pkg19, pkg14, pkg20, pkg21], 0, HUB_ADDRESS, time(8, 00))
+    Truck2 = Truck(2, 16, [pkg36, pkg38, pkg37, pkg18, pkg3], 0, HUB_ADDRESS, time(9, 00))
+    Truck3 = Truck(3, 16, [pkg6, pkg25, pkg26, pkg28, pkg31, pkg32, pkg9], 0, HUB_ADDRESS, time(10, 00))
 
     fleet = [Truck1, Truck2, Truck3]
-    all_packages = [pkg1, pkg2, pkg4, pkg5, pkg7, pkg8, pkg10, pkg11, pkg12, pkg17, pkg24, pkg27, pkg29, pkg30, pkg33, pkg34, pkg35, pkg39, pkg40]
+    all_packages = [pkg1, pkg2, pkg4, pkg5, pkg7, pkg8, pkg10, pkg11, pkg12, pkg17, pkg24, pkg27, pkg29, pkg30, pkg33,
+                    pkg34, pkg35, pkg39, pkg40]
 
     leftovers = assign_packages_to_trucks(fleet, all_packages)
 
@@ -227,8 +330,7 @@ def main():
     for t in fleet:
         print(f" Truck {t.ID}: {[p.ID for p in t.load]}")
     print("Couldn't assign: ", [p.ID for p in leftovers])
-    
-    '''
+
     table = load_packages()[0]
 
     print("test package")
@@ -278,6 +380,7 @@ def main():
     testTable.remove(1)
     print(testTable.table)
     '''
+
 
 if __name__ == "__main__":
     main()
