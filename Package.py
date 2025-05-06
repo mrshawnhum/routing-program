@@ -18,9 +18,9 @@ class Package:
                                                self.status)
 
     def update_status(self, current_time: datetime):
-        if self.arrival_time <= current_time:
+        if self.arrival_time is not None and self.arrival_time <= current_time:
             self.status = "Delivered"
-        elif self.departure_time <= current_time:
+        elif self.departure_time is not None and self.departure_time <= current_time:
             self.status = "On The Way"
         else:
             self.status = "At Hub"

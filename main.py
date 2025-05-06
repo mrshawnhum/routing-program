@@ -218,7 +218,39 @@ def deliver_packages(truck):
         next_available_package.arrival_time = truck.time
         next_available_package.update_status(truck.time)
         print(f"Delivered: {next_available_package.ID} at {next_available_package.arrival_time.strftime('%H:%M')}")
+# Address correction dictionary
+ADDRESS_CORRECTIONS = { 9: (37, time(10, 20))} # pkg 9 copies pkg 37 before delivery
+# Address corrector for package ID 9
+def apply_address_correction(packages, current_time):
+    # Normalize current_time to a time object
+    ct = current_time.time() if isinstance(current_time, datetime) else current_time
 
+    # Build or use existing ID->Package map for quick lookups
+    if isinstance(packages, dict):
+        pkg_map = packages
+    else:
+        pkg_map = {p.ID: p for p in packages}
+
+    # Apply each correction rule
+    for target_id, (source_id, correction_time) in ADDRESS_CORRECTIONS.items():
+        target_pkg = pkg_map.get(target_id)
+        source_pkg = pkg_map.get(source_id)
+
+        # Warn if packages aren't present in the provided collection
+        if target_pkg is None:
+            print(f"[WARN] target pkg {target_id} not found in packages")
+            continue
+        if source_pkg is None:
+            print(f"[WARN] source pkg {source_id} not found in packages")
+            continue
+
+        # Only change address once the clock has reached correction_time
+        if ct >= correction_time:
+            target_pkg.address = source_pkg.address
+            print(f"Applied address correction: pkg {target_id} -> {source_pkg.address}")
+        else:
+            # Optionally reset to original if needed (not usually necessary)
+            pass
 
 
 def main():
@@ -251,23 +283,28 @@ def main():
     while True:
         main_menu()
         user_input = input("Enter your choice: ").strip()
+        # Does not ask for time when user exits program
+        if user_input != "4":
+            convert_time = current_time()
+            apply_address_correction(packages, convert_time)
+            for pkg in packages:
+                pkg.update_status(convert_time)
+
         match user_input:
             case "1":
-                convert_time = current_time()
                 for packageID in range(1, 41):
                     package = package_hash_table.lookup(packageID)
-                    package.update_status(convert_time)
                     print(str(package))
 
             case "2":
-                convert_time = current_time()
-                package_locator = input("Enter your package ID: ").strip()
+                package_locator = int(input("Enter your package ID: ").strip())
                 package = package_hash_table.lookup(package_locator)
-                package.update_status(convert_time)
+                if package is None:
+                    print("Package not found")
+
                 print(str(package))
 
             case "3":
-                convert_time = current_time()
                 try:
                     truck_locator = input("Enter your truck ID: ").strip()
                     found_truck = None
@@ -275,9 +312,6 @@ def main():
                         if truck.ID == int(truck_locator):
                             found_truck = truck
                             break
-                    for pkg in found_truck.load:
-                        package = package_hash_table.lookup(pkg)
-                        package.update_status(convert_time)
                     print(str(found_truck))
                 except ValueError:
                     raise ValueError("Please enter a valid truck ID")
