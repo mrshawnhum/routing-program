@@ -204,6 +204,11 @@ def deliver_packages(truck, lookup_fn):
     # Clear truck table to load back in order
     truck.load.clear()
 
+    # Record the time package left the hub
+    start_time = truck.time
+    for pkg in not_delivered:
+        pkg.departure_time = start_time
+
     # Loop until the load is empty
     while len(not_delivered) > 0:
         next_available_package = None
@@ -217,14 +222,11 @@ def deliver_packages(truck, lookup_fn):
                 next_available_package = pkg
                 next_address = effective_address
 
-        # Record departure
-        next_available_package.departure_time = truck.time
-
         # Drive there and update miles truck traveled
         truck.mileage += closest_package_distance
         truck.time += truck.travel_time(closest_package_distance)
 
-        # Arrive
+        # Stamp arrival
         next_available_package.arrival_time = truck.time
         next_available_package.update_status(truck.time)
         print(f"Delivered: {next_available_package.ID} by truck ID: {truck.ID} at address: {next_address} on {next_available_package.arrival_time.strftime('%H:%M')}, mileage: {closest_package_distance}")
