@@ -325,7 +325,8 @@ def main():
                     package = package_hash_table.lookup(packageID)
                     effective_address = get_effective_address(package, convert_time, package_hash_table.lookup)
                     package.update_status(convert_time)
-                    print(f"Package ID: {package.ID} | Address: {effective_address} | Status: {package.status} | Arrival Time: {package.arrival_time.strftime('%H:%M')}")
+                    print(f"\nPackage ID: {package.ID} | Address: {effective_address} | Weight: {package.weight} Kilo")
+                    print(f"Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.departure_time else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.arrival_time else "N/A"} | Status: {package.status}")
 
             case "2":
                 package_id = int(input("Enter your package ID: ").strip())
