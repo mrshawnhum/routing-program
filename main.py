@@ -11,7 +11,7 @@ from datetime import datetime, time, timedelta
 # Global variables
 HUB_ADDRESS = "4001 South 700 East"
 truck1 = Truck(1, 16, [], 0, HUB_ADDRESS, time(8, 00))
-truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 00))
+truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 10))
 truck3 = Truck(3, 16, [], 0, HUB_ADDRESS, time(10, 00))
 
 def load_packages(filename="CSV/WGUPS-data.csv"):
@@ -92,12 +92,12 @@ def load_constraint_package():
             truck1.load.append(package)
 
         # If the package ID match the following numbers, load into truck2
-        if packageID in (3, 18, 36, 37, 38):
+        if packageID in (3, 6, 18, 25, 26, 28, 31, 32, 36, 37, 38):
             package = package_hash_table.lookup(packageID)
             truck2.load.append(package)
 
         # If the package ID match the following numbers, load into truck3
-        if packageID in (6, 9, 25, 26, 28, 31, 32):
+        if packageID == 9:
             package = package_hash_table.lookup(packageID)
             truck3.load.append(package)
 
@@ -114,9 +114,6 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
     # filter out packages already loaded into truck
     preloaded = {p.ID for t in fleet for p in t.load}
     pool = [p for p in packages if p.ID not in preloaded]
-
-    # Store any package that can't fit
-    unassigned = []
 
     # assign all deadline-sensitive packages and sort by earliest deadline
     timed = sorted([p for p in pool if isinstance(p.deadline, time)],
@@ -154,8 +151,6 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
             tr.current_address = pkg.address
             pool.remove(pkg)
             # print(f"-- Assigned pkg {pkg.ID} to Truck {tr.ID} at minute {arrive}")
-        else:
-            unassigned.append(pkg)  # assumes no truck could handle the deadline
 
     # Assign remaining EOD packages
     eod_left = [p for p in pool if not isinstance(p.deadline, time)]
@@ -169,22 +164,28 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
                 continue
             curr = getattr(tr, 'next_available_min',
                            time_to_minutes(tr.departure_time))
-            dist = distance_between(tr.current_address, pkg.address)
-            travel_min = (dist / tr.speed) * 60
+            first_dist = distance_between(tr.current_address, pkg.address)
+            travel_min = (first_dist / tr.speed) * 60
             arrive = curr + travel_min
 
+            others = [other_pkg for other_pkg in pool if other_pkg is not pkg]
+            if others:
+                second_dist = min(distance_between(pkg.address, other.address) for other in pool if other is not pkg)
+            else:
+                second_dist = 0.0
+
+            score = (arrive, first_dist + second_dist)   # sort first by feasibility, then by total travel
+
             # pick the truck that can finish prior work and arrive soonest
-            if best is None or arrive < best[1]:
-                best = (tr, arrive)
+            if best is None or score < best[2]:
+                best = (tr, arrive, score)
 
         if best:
-            tr, arrive = best
+            tr, arrive, score = best
             tr.load.append(pkg)
             tr.next_available_min = arrive
             tr.current_address = pkg.address
             pool.remove(pkg)
-        else:
-            unassigned.append(pkg)
 
 
 # Routing algorithm
