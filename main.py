@@ -156,36 +156,23 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
     eod_left = [p for p in pool if not isinstance(p.deadline, time)]
 
     # loop through remaining packages with the least priority
-    for pkg in eod_left:
-        # print("Trying eod:", pkg.ID, pkg.deadline)
-        best = None
-        for tr in fleet:
-            if len(tr.load) >= tr.capacity:
-                continue
-            curr = getattr(tr, 'next_available_min',
-                           time_to_minutes(tr.departure_time))
-            first_dist = distance_between(tr.current_address, pkg.address)
-            travel_min = (first_dist / tr.speed) * 60
-            arrive = curr + travel_min
-
-            others = [other_pkg for other_pkg in pool if other_pkg is not pkg]
-            if others:
-                second_dist = min(distance_between(pkg.address, other.address) for other in pool if other is not pkg)
-            else:
-                second_dist = 0.0
-
-            score = (arrive, first_dist + second_dist)   # sort first by feasibility, then by total travel
-
-            # pick the truck that can finish prior work and arrive soonest
-            if best is None or score < best[2]:
-                best = (tr, arrive, score)
-
-        if best:
-            tr, arrive, score = best
+    # print("Trying eod:", pkg.ID, pkg.deadline)
+    for tr in fleet:
+        while len(tr.load) < tr.capacity and eod_left:
+            # pick the nearest package to this truck’s current spot
+            pkg = min(
+                eod_left,
+                key=lambda p: distance_between(tr.current_address, p.address)
+            )
             tr.load.append(pkg)
-            tr.next_available_min = arrive
+            eod_left.remove(pkg)
+            # move the “cluster center” forward
             tr.current_address = pkg.address
-            pool.remove(pkg)
+            # advance its clock if you care about next_available_min
+            curr = getattr(tr, 'next_available_min',
+                            time_to_minutes(tr.departure_time))
+            d = distance_between(tr.current_address, pkg.address)
+            tr.next_available_min = curr + (d / tr.speed) * 60
 
 
 # Routing algorithm
