@@ -1,9 +1,12 @@
 from datetime import datetime
+
+
 # Object class for packages
 class Package:
     def __init__(self, ID, address, city, state, zip_code, deadline, weight, status):
         self.ID = ID
         self.address = address
+        self.original_address = address
         self.city = city
         self.state = state
         self.zip_code = zip_code
@@ -24,3 +27,4 @@ class Package:
             self.status = "On The Way"
         else:
             self.status = "At Hub"
+

@@ -252,6 +252,18 @@ def apply_address_correction(packages, current_time):
             # Optionally reset to original if needed (not usually necessary)
             pass
 
+def get_effective_address(pkg, current_time, lookup_fn):
+    t = current_time.time() if isinstance(current_time, datetime) else current_time
+
+    rule = ADDRESS_CORRECTIONS.get(pkg.ID)
+    if rule:
+        source_id, correction_time = rule
+        if t >= correction_time:
+            source_package = lookup_fn(source_id)
+            return source_package.original_address
+
+    return pkg.original_address
+
 
 def main():
     fleet = [truck1, truck2, truck3]
@@ -287,22 +299,24 @@ def main():
         if user_input != "4":
             convert_time = current_time()
             apply_address_correction(packages, convert_time)
-            for pkg in packages:
-                pkg.update_status(convert_time)
 
         match user_input:
             case "1":
                 for packageID in range(1, 41):
                     package = package_hash_table.lookup(packageID)
-                    print(str(package))
+                    effective_address = get_effective_address(package, convert_time, package_hash_table.lookup)
+                    package.update_status(convert_time)
+                    print(f"Package ID: {package.ID} | Address: {effective_address} | Status: {package.status}")
 
             case "2":
-                package_locator = int(input("Enter your package ID: ").strip())
-                package = package_hash_table.lookup(package_locator)
+                package_id = int(input("Enter your package ID: ").strip())
+                package = package_hash_table.lookup(package_id)
+                effective_address = get_effective_address(package, convert_time, package_hash_table.lookup)
+                package.update_status(convert_time)
                 if package is None:
                     print("Package not found")
 
-                print(str(package))
+                print(f"Package ID: {package.ID} | Address: {effective_address} | Status: {package.status}")
 
             case "3":
                 try:
