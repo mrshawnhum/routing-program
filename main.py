@@ -146,6 +146,7 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
         if best:
             tr, arrive = best
             tr.load.append(pkg)
+            pkg.in_truck_id = tr.ID
             tr.next_available_min = arrive
             tr.current_address = pkg.address
             pool.remove(pkg)
@@ -164,6 +165,7 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
                 key=lambda p: distance_between(tr.current_address, p.address)
             )
             tr.load.append(pkg)
+            pkg.in_truck_id = tr.ID
             eod_left.remove(pkg)
             # move the “cluster center” forward
             tr.current_address = pkg.address
