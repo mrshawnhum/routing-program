@@ -6,12 +6,12 @@ from CreateHashTable import CreateHashTable
 from Package import Package
 from Truck import Truck
 import csv
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 
 # Global variables
 HUB_ADDRESS = "4001 South 700 East"
 truck1 = Truck(1, 16, [], 0, HUB_ADDRESS, time(8, 00))
-truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 10))
+truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 00))
 truck3 = Truck(3, 16, [], 0, HUB_ADDRESS, time(10, 00))
 
 def load_packages(filename="CSV/WGUPS-data.csv"):
@@ -82,24 +82,23 @@ def distance_between(address1, address2):
 
     return distance
 
+PRELOAD = {
+    1: [13, 14, 15, 16, 19, 20, 21, 34],
+    2: [3, 18, 36, 37, 38],
+    3: [6, 9, 25, 26, 28, 31, 32],
+}
 # Load packages to trucks with hard requirements (delayed, into a certain truck, with certain packages, etc)
 def load_constraint_package():
-    # Loop through all the package IDs
-    for packageID in range(1, 41):
-        # If the package ID match the following numbers, load into truck1
-        if packageID in (13, 14, 15, 16, 19, 20, 21):
-            package = package_hash_table.lookup(packageID)
-            truck1.load.append(package)
-
-        # If the package ID match the following numbers, load into truck2
-        if packageID in (3, 6, 18, 25, 26, 28, 31, 32, 36, 37, 38):
-            package = package_hash_table.lookup(packageID)
-            truck2.load.append(package)
-
-        # If the package ID match the following numbers, load into truck3
-        if packageID == 9:
-            package = package_hash_table.lookup(packageID)
-            truck3.load.append(package)
+    # Loop through all the trucks
+    for tr in (truck1, truck2, truck3):
+        # look up the list of package IDs for this truck
+        ids = PRELOAD.get(tr.ID, [])
+        for pid in ids:
+            pkg = package_hash_table.lookup(pid)
+            if pkg is None:
+                continue
+            pkg.in_truck_id = tr.ID
+            tr.load.append(pkg)
 
 # convert time to minutes since midnight
 def time_to_minutes(t: time) -> int:
