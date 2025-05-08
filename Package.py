@@ -15,6 +15,7 @@ class Package:
         self.status = status
         self.departure_time = None
         self.arrival_time = None
+        self.in_truck_id = None
 
     def __str__(self):
         return "%s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zip_code, self.weight,
