@@ -199,7 +199,7 @@ def deliver_packages(truck, lookup_fn):
         pkg.departure_time = start_time
 
     # Loop until the load is empty
-    while len(not_delivered) > 0:
+    while not_delivered:
         next_available_package = None
         closest_package_distance = float("inf")
         next_address = None
