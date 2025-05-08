@@ -178,6 +178,8 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
 
 # Routing algorithm
 def deliver_packages(truck, lookup_fn):
+    # Reset location of truck
+    truck.current_address = HUB_ADDRESS
     not_delivered = []
     for entry in truck.load:
         if isinstance(entry, Package):
@@ -278,8 +280,23 @@ def main():
     packages = [pkg for bucket in package_hash_table.table for (_, pkg) in bucket]
     load_constraint_package()
     assign_packages_to_trucks(fleet, packages)
-    for truck in fleet:
-        deliver_packages(truck, package_hash_table.lookup)
+
+    deliver_packages(truck1, package_hash_table.lookup)
+    deliver_packages(truck2, package_hash_table.lookup)
+    def update_departure(truck_at_hub):
+        return_distance = distance_between(truck1.current_address, HUB_ADDRESS)
+        truck1.mileage += return_distance
+        truck1.time += truck1.travel_time(return_distance)
+        print(
+            f"Truck {truck1.ID} has returned to the hub at {truck1.time.strftime('%I:%M %p')} (+{return_distance:.1f} miles)")
+
+        truck_at_hub.departure_time = truck1.time
+        truck_at_hub.time = truck1.time
+        truck_at_hub.current_address = HUB_ADDRESS
+        print(f"Truck 3 departs at {truck3.time.strftime('%I:%M %p')}")
+
+    update_departure(truck3)
+    deliver_packages(truck3, package_hash_table.lookup)
 
     # UI
     print("Welcome to WGUPS Routing Program!")
