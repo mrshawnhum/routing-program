@@ -334,10 +334,9 @@ def main():
 
     # Method to print status of packages
     def print_status(pkg_ID, input_time, lookup_fn):
-        package = lookup_fn(pkg_ID)
-        package.update_status(input_time)
-        eff_address = get_effective_address(package, input_time,
-                                                  lookup_fn)  # Get the address of package if changed
+        package = lookup_fn(pkg_ID) # Find package with associated ID
+        package.update_status(input_time) # Update status based on time
+        eff_address = get_effective_address(package, input_time, lookup_fn)  # Get the address of package if changed
 
         # If ID doesn't exist, print error
         if package is None:
