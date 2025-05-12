@@ -250,7 +250,6 @@ def deliver_packages(truck, lookup_fn):
         truck.load.append(next_available_package.ID)
         not_delivered.remove(next_available_package)
 
-
 # Address correction dictionary
 ADDRESS_CORRECTIONS = {9: (37, time(10, 20))}  # pkg 9 copies pkg 37 (actual address) by 10:20 AM
 
@@ -314,7 +313,9 @@ def main():
     packages = [pkg for bucket in package_hash_table.table for (_, pkg) in bucket]  # Package list to illiterate through
     assign_packages_to_trucks(fleet, packages)  # Assign remaining packages to trucks
 
-    # Run delivery program for 1st & 2nd truck
+    # Assign drivers and run delivery program for 1st & 2nd truck
+    truck1.driver_ID = 1
+    truck2.driver_ID = 2
     deliver_packages(truck1, package_hash_table.lookup)
     deliver_packages(truck2, package_hash_table.lookup)
 
@@ -327,10 +328,11 @@ def main():
         returning_truck.time += returning_truck.travel_time(return_distance)  # Update time it took to get there
         returning_truck.current_address = HUB_ADDRESS  # Truck is now parked at hub
 
-        # Update when 3rd truck left
+        # Update when 3rd truck left and assign driver
         depart_time = returning_truck.time
         truck_at_hub.departure_time = depart_time.time()
         truck_at_hub.time = depart_time
+        truck_at_hub.driver_ID = returning_truck.driver_ID
         truck_at_hub.current_address = HUB_ADDRESS
 
     # Update time 3rd truck leaves and start delivery program
@@ -382,7 +384,7 @@ def main():
         main_menu()
         user_input = input("Enter your choice: ").strip()
 
-        # Only ask for time when viewing package history
+        # Only ask for time when viewing package or truck history
         if user_input in {"1", "2"}:
             convert_time = current_time()
             apply_address_correction(packages, convert_time)
@@ -402,31 +404,40 @@ def main():
 
             # Third option = truck summary
             case "3":
-                truck_locator = input("Enter your truck ID: ").strip()  # Ask for Truck ID to view summary
+                truck_locator = input("Enter your truck ID or type ALL for every truck: ").strip().lower()  # Ask for Truck ID or all trucks to view summary
 
                 # If Truck ID is invalid, print error
                 try:
-                    total_mileage = 0 # Store total mileage
-                    found_truck = None # Store searched truck
-                    for truck in fleet:
-                        total_mileage += truck.mileage # Add truck mileage to total
-                        # Print each truck's departure and mileage
-                        print(
-                            f"Truck {truck.ID} departed at {truck.departure_time.strftime('%I:%M %p')} & drove {truck.mileage} miles")
-                        # When searched truck located, stor eit
-                        if truck.ID == int(truck_locator):
-                            found_truck = truck
+                    if truck_locator != "all":
+                        tr_id = int(truck_locator)
+                        chosen = next((t for t in fleet if t.ID == tr_id), None)
+                        if not chosen:
+                            print("Truck ID not found")
+                            break
 
-                    print(f"Total mileage driven: {total_mileage} miles\n") # Print total mileage
+                        print(f'\nTruck ID: {chosen.ID}')
+                        print(f'Driver ID: {chosen.driver_ID}')
+                        print(f'Load: {chosen.load}')
+                        print(f'Departure Time: {chosen.departure_time.strftime('%I:%M %p')}')
+                        print(f'Mileage: {chosen.mileage}\n')
 
-                    # Print truck being searched for
-                    print("Summary of chosen truck:")
-                    print(
-                        f'ID: {found_truck.ID}, Load: {found_truck.load}, Mileage: {found_truck.mileage}, Departure Time: {found_truck.departure_time.strftime('%I:%M %p')}\n')
+                    else:
+                        total_mileage = 0.0  # Store total mileage
+                        print("Summary of each truck:")
+                        for truck in fleet:
+                            total_mileage += truck.mileage  # Add truck mileage to total
+                            # Print each truck's departure and mileage
+                            print(f'\nTruck ID: {truck.ID}')
+                            print(f'Driver ID: {truck.driver_ID}')
+                            print(f'Load: {truck.load}')
+                            print(f'Departure Time: {truck.departure_time.strftime('%I:%M %p')}')
+                            print(f'Mileage: {truck.mileage} miles\n')
+
+                        print(f"Total miles driven: {total_mileage} miles\n") # Print total mileage
 
                 # Print error if invalid truck ID
                 except ValueError:
-                    raise ValueError("Please enter a valid truck ID")
+                    raise ValueError("Please enter a valid truck ID or type ALL for every truck")
 
             # Option 4 = Exit program
             case "4":
