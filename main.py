@@ -301,10 +301,12 @@ def main():
         return_distance = distance_between(returning_truck.current_address, HUB_ADDRESS) # Distance from last package address to hub
         returning_truck.mileage += return_distance # Add distance it took to get back to hub
         returning_truck.time += returning_truck.travel_time(return_distance) # Update time it took to get there
+        returning_truck.current_address = HUB_ADDRESS # Truck is now parked at hub
 
-        # Update when 3rd truck leaves
-        truck_at_hub.departure_time = returning_truck.time
-        truck_at_hub.time = returning_truck.time
+        # Update when 3rd truck left
+        depart_time = returning_truck.time
+        truck_at_hub.departure_time = depart_time.time()
+        truck_at_hub.time = depart_time
         truck_at_hub.current_address = HUB_ADDRESS
 
     # Update time 3rd truck leaves and start delivery program
@@ -384,12 +386,14 @@ def main():
                     found_truck = None
                     for truck in fleet:
                         total += truck.mileage
-                        print(f"Truck {truck.ID} departed at {truck.departure_time} & drove {truck.mileage} miles")
+                        print(f"Truck {truck.ID} departed at {truck.departure_time.strftime('%I:%M %p')} & drove {truck.mileage} miles")
                         if truck.ID == int(truck_locator):
                             found_truck = truck
 
+                    print(f"Total mileage driven: {total} miles\n")
+
                     print("Summary of chosen truck:")
-                    print(str(found_truck))
+                    print(f'ID: {found_truck.ID}, Load: {found_truck.load}, Mileage: {found_truck.mileage}, Departure Time: {found_truck.departure_time.strftime('%I:%M %p')}\n')
 
                 except ValueError:
                     raise ValueError("Please enter a valid truck ID")
