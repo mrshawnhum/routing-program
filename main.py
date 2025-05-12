@@ -332,6 +332,23 @@ def main():
 
         return datetime.combine(datetime.today(), t)
 
+    # Method to print status of packages
+    def print_status(pkg_ID, input_time, lookup_fn):
+        package = lookup_fn(pkg_ID)
+        package.update_status(input_time)
+        eff_address = get_effective_address(package, input_time,
+                                                  lookup_fn)  # Get the address of package if changed
+
+        # If ID doesn't exist, print error
+        if package is None:
+            print("Package not found")
+
+        # Print status of package
+        print(
+            f"\nPackage ID: {package.ID} | Address: {eff_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}")
+        print(
+            f"Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.departure_time else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.status == "Delivered" else "N/A"} | Status: {package.status}")
+
     # Run until told to stop
     while True:
         # Ask user what they want to do
@@ -349,26 +366,12 @@ def main():
             # First option = View status of all packages
             case "1":
                 for packageID in range(1, 41):
-                    package = package_hash_table.lookup(packageID) # Find package associated with ID
-                    effective_address = get_effective_address(package, convert_time, package_hash_table.lookup) # Get the address of package if changed
-                    package.update_status(convert_time) # Update package status based on input time
-                    # Print status of packages
-                    print(f"\nPackage ID: {package.ID} | Address: {effective_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}")
-                    print(f"Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.departure_time else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.arrival_time else "N/A"} | Status: {package.status}")
+                    print_status(packageID, convert_time, package_hash_table.lookup)
 
             # Second option = View a package
             case "2":
                 package_id = int(input("Enter your package ID: ").strip())
-                package = package_hash_table.lookup(package_id) # Find package associated with ID
-                effective_address = get_effective_address(package, convert_time, package_hash_table.lookup) # Get the address of package if changed
-                package.update_status(convert_time) # Update package status based on input time
-
-                # If ID doesn't exist, print error
-                if package is None:
-                    print("Package not found")
-
-                # Print status of package
-                print(f"Package ID: {package.ID} | Address: {effective_address} | Status: {package.status}")
+                print_status(package_id, convert_time, package_hash_table.lookup)
 
             # Third option = truck summary
             case "3":
