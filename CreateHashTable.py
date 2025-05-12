@@ -8,7 +8,7 @@ class CreateHashTable:
 
     # Insert and update
     def insert(self, key, item):
-        # Grab bucket lis
+        # Grab bucket list
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
 
@@ -32,7 +32,7 @@ class CreateHashTable:
         for kv in bucket_list:
             if kv[0] == key:
                 return kv[1]
-        return None
+        return True
 
     # Remove from hash table
     def remove(self, key):

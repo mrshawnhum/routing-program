@@ -22,7 +22,7 @@ class Package:
 
     # Package default string
     def __str__(self):
-        return "%s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zip_code, self.weight,
+        return "%s, %s, %s, %s, %s, %s, %s %s" % (self.ID, self.address, self.city, self.state, self.zip_code, self.weight, self.deadline,
                                                self.status)
 
     # Helper method to inform user on status of package
