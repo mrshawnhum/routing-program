@@ -73,17 +73,17 @@ def load_distances_and_addresses(filename):
 
 # load distance and address list to predefined variables
 address_list, distance_list = load_distances_and_addresses("CSV/WGUPS-distance.csv")
+# Build the map once for fast distance comparison
+ADDRESS_IDX: dict[str, int] = {addr: i for i, addr in enumerate(address_list)}
 
 # Calculate distance using distance list
-def distance_between(address1, address2):
-    x = address_list.index(address1)
-    y = address_list.index(address2)
+def distance_between(address1: str, address2: str):
+    # Assign coordinates from address list
+    x, y = ADDRESS_IDX[address1], ADDRESS_IDX[address2]
 
+    # Return distance between coordinates
     distance = distance_list[x][y]
-    if distance is None:
-        distance = distance_list[y][x]
-
-    return distance
+    return distance if distance is not None else distance_list[y][x]
 
 # Packages that are required to be in certain trucks
 PRELOAD = {
