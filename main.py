@@ -225,7 +225,6 @@ def deliver_packages(truck, lookup_fn):
         # Stamp arrival
         next_available_package.arrival_time = truck.time
         next_available_package.update_status(truck.time)
-        # print(f"Delivered: {next_available_package.ID} by truck ID: {truck.ID} at address: {next_address} on {next_available_package.arrival_time.strftime('%H:%M')}, mileage: {closest_package_distance}")
 
         # Move the truck
         truck.current_address = next_address
@@ -298,14 +297,11 @@ def main():
         return_distance = distance_between(returning_truck.current_address, HUB_ADDRESS) # Distance from last package address to hub
         returning_truck.mileage += return_distance # Add distance it took to get back to hub
         returning_truck.time += returning_truck.travel_time(return_distance) # Update time it took to get there
-        print(
-            f"Truck {returning_truck.ID} has returned to the hub at {returning_truck.time.strftime('%I:%M %p')} (+{return_distance:.1f} miles)")
 
         # Update when 3rd truck leaves
         truck_at_hub.departure_time = returning_truck.time
         truck_at_hub.time = returning_truck.time
         truck_at_hub.current_address = HUB_ADDRESS
-        print(f"Truck 3 departs at {truck3.time.strftime('%I:%M %p')}")
 
     # Update time 3rd truck leaves and start delivery program
     update_departure(truck1, truck3)
@@ -314,9 +310,10 @@ def main():
     # UI
     print("Welcome to WGUPS Routing Program!")
     print("The total mileage driven is: " + str(truck1.mileage + truck2.mileage + truck3.mileage))
+
     # Main menu
     def main_menu():
-        print("\nWhat would you like to do?")
+        print("What would you like to do?")
         print("1. View All Packages")
         print("2. Look Up a Package")
         print("3. View Truck Summary")
@@ -344,9 +341,9 @@ def main():
 
         # Print status of package
         print(
-            f"\nPackage ID: {package.ID} | Address: {eff_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}")
+            f"Package ID: {package.ID} | Address: {eff_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}")
         print(
-            f"Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.departure_time else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.status == "Delivered" else "N/A"} | Status: {package.status}")
+            f"Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.status == "Delivered" or package.status == "On The Way" else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.status == "Delivered" else "N/A"} | Status: {package.status}\n")
 
     # Run until told to stop
     while True:
