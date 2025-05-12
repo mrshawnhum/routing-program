@@ -1,24 +1,14 @@
 # Source citation: C950 - Webinar-1 - Let’s Go Hashing - Complete Python Code 2024
 class CreateHashTable:
-    def __init__(self, initial_capacity=10):
-        self.table = []
+    def __init__(self, initial_capacity=10): # Set initial capacity unless specified
+        self.table = [] # Assign table to empty list
+        # Add each item to table
         for i in range(initial_capacity):
             self.table.append([])
 
-    '''
-    # Insert new item into hash table
-    #Original
-    def insert(self, item):
-        bucket = hash(item) % len(self.table)
-        bucket_list = self.table[bucket]
-
-        # add the item to the end of the bucket list
-        bucket_list.append(item)
-    '''
-
     # Insert and update
     def insert(self, key, item):
-        # get bucket that item can go
+        # Grab bucket lis
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
 
@@ -33,24 +23,8 @@ class CreateHashTable:
         bucket_list.append(key_value)
         return True
 
-    '''
-    #Original
     def lookup(self, key):
-        # get the bucket list where this key would be
-        bucket = hash(key) % len(self.table)
-        bucket_list = self.table[bucket]
-
-        # search for the key in the bucket list
-        if key in bucket_list:
-            # find the item's index and return the item in the bucket list
-            item_index = bucket_list.index(key)
-            return bucket_list[item_index]
-        else:
-            # the key is not found
-            return None
-    '''
-
-    def lookup(self, key):
+        # Grab bucket list
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
 
@@ -60,21 +34,9 @@ class CreateHashTable:
                 return kv[1]
         return None
 
-    '''
-    # Removes an item with matching key from the hash table
-    #Original
+    # Remove from hash table
     def remove(self, key):
-        # get the bucket list where this item will be removed from
-        bucket = hash(key) % len(self.table)
-        bucket_list = self.table[bucket]
-
-        # remove the item from the bucket list if it is present
-        if key in bucket_list:
-            bucket_list.remove(key)
-
-    '''
-
-    def remove(self, key):
+        # Grab bucket list
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
 
