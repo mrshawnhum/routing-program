@@ -266,7 +266,10 @@ def apply_address_correction(packages, current_time):
         # Only change address once the clock has reached correction_time
         if ct >= correction_time:
             target_pkg.address = source_pkg.address
-            print(f"Applied address correction: pkg {target_id} -> {source_pkg.address}")
+            target_pkg.city = source_pkg.city
+            target_pkg.state = source_pkg.state
+            target_pkg.zip_code = source_pkg.zip_code
+            print(f"Applied address correction: pkg {target_id} -> {source_pkg.address}, {source_pkg.city}, {source_pkg.state}, {source_pkg.zip_code}")
         else:
             pass
 
@@ -348,7 +351,7 @@ def main():
 
         # Print status of package
         print(
-            f'Package ID: {package.ID} | Address: {eff_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}')
+            f'Package ID: {package.ID} | Address: {eff_address} | City: {package.city} | State: {package.state} | Zip Code: {package.zip_code} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}')
         print(
             f'Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.status == "Delivered" or package.status == "On The Way" else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.status == "Delivered" else "N/A"} | Status: {package.status}\n')
 
