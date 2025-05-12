@@ -112,72 +112,76 @@ def time_to_minutes(t: time) -> int:
 # Algorithm to assign packages to trucks based on priority, distance, and available space in truck based on nearest-neighbor concepts
 def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
     # helper function to map package deadline to amount of minutes
-    def dl_min(p):
-        return time_to_minutes(p.deadline) if isinstance(p.deadline, time) else 23 * 60 + 59
+    def deadline_min(pkg: Package):
+        return (pkg.deadline.hour * 60 + pkg.deadline.minute) if pkg.deadline else 23 * 60 + 59
 
-    # filter out packages already loaded into trucks
+    # filter out packages already loaded into trucks and split tables with deadline vs EOD deadline
     preloaded = {p.ID for t in fleet for p in t.load}
-    pool = [p for p in packages if p.ID not in preloaded]
+    timed_pkgs = [p for p in packages if p.ID not in preloaded and p.deadline]
+    eod_pkgs = [p for p in packages if p.ID not in preloaded and not p.deadline]
 
-    # assign all deadline-sensitive packages and sort by earliest deadline
-    timed = sorted([p for p in pool if isinstance(p.deadline, time)],
-                   key=dl_min)
+    # Sort for deterministic behaviour
+    timed_pkgs.sort(key=deadline_min)
+    eod_pkgs.sort(key=lambda p: p.ID)
+    fleet.sort(key=lambda t: time_to_minutes(t.departure_time))
 
-    # Loop through all deadline packages
-    for pkg in timed:
-        best = None  # will hold (truck, arrival_min)
-
-        # skip any truck that is full
-        for tr in fleet:
-            # Pass any truck with full loads
-            if len(tr.load) >= tr.capacity:
-                continue
-
-            # truck's current clock (in minutes)
-            curr = getattr(tr, 'next_available_min',
-                           time_to_minutes(tr.departure_time))
-            # truck's current location
-            loc = tr.current_address
-
-            # Compute travel time
-            dist = distance_between(loc, pkg.address)
-            travel_min = (dist / tr.speed) * 60
-            arrive = curr + travel_min
-
-            # if we can make the deadline, pick the earliest arrival time
-            if arrive <= dl_min(pkg) and (best is None or arrive < best[1]):
-                best = (tr, arrive)
-
-        # Assign the best truck to meet deadline
-        if best:
-            tr, arrive = best # Assign best truck
-            tr.load.append(pkg) # Load package to assigned truck
-            pkg.in_truck_id = tr.ID # Update ID of truck that package is assigned to
-            tr.next_available_min = arrive # Update attribute
-            tr.current_address = pkg.address # Update truck address(for determining best packages
-            pool.remove(pkg) # Remove the package from pool of packages left to assign
-
-    # Assign remaining packages with EOD deadline
-    eod_left = [p for p in pool if not isinstance(p.deadline, time)]
-
-    # loop through trucks with remaining loads while packages were left to assign
+    # Assign all deadline packages to a truck
     for tr in fleet:
-        while len(tr.load) < tr.capacity and eod_left:
-            # pick the nearest package to this truck’s current spot
-            pkg = min(
-                eod_left,
-                key=lambda p: distance_between(tr.current_address, p.address)
-            )
-            tr.load.append(pkg) # Load into truck
-            pkg.in_truck_id = tr.ID # Update ID of truck the package is in
-            eod_left.remove(pkg) # Remove package from pool
-            tr.current_address = pkg.address # move the “cluster center” forward
+        curr_addr = tr.current_address
+        curr_min = time_to_minutes(tr.departure_time)
 
-            # advance its clock
-            curr = getattr(tr, 'next_available_min',
-                            time_to_minutes(tr.departure_time))
-            d = distance_between(tr.current_address, pkg.address)
-            tr.next_available_min = curr + (d / tr.speed) * 60
+        while timed_pkgs and len(tr.load) < tr.capacity:
+            # find the closest timed package that we can still deliver on time
+            possible = [
+                (pkg,
+                 curr_min + distance_between(curr_addr, pkg.address) / tr.speed * 60)
+                for pkg in timed_pkgs
+            ]
+            # filter those we can reach before their deadline
+            feasible = [(pkg, arr) for pkg, arr in possible if arr <= deadline_min(pkg)]
+            if not feasible:
+                break  # nothing more this truck can do
+
+            # pick the package with earliest arrival (ties = earliest deadline)
+            pkg, arrive = min(feasible, key=lambda x: (x[1], deadline_min(x[0])))
+
+            # Load it to truck
+            tr.load.append(pkg)
+            pkg.in_truck_id = tr.ID
+            timed_pkgs.remove(pkg)
+
+            # Advance truck cursor
+            curr_addr = pkg.address
+            curr_min = arrive
+
+        # store the updated cursor back on the truck for later use
+        tr.current_address = curr_addr
+        tr.next_available_min = curr_min
+
+        # fast exit: if every truck is now full, no point continuing
+        if all(len(t.load) >= t.capacity for t in fleet):
+            break
+
+        # Loop until no more packages or truck is full
+        while eod_pkgs and any(len(t.load) < t.capacity for t in fleet):
+            for tr in fleet:
+                if not eod_pkgs or len(tr.load) >= tr.capacity:
+                    continue
+
+                # choose nearest point to truck's current spot
+                nearest = min(
+                    eod_pkgs,
+                    key=lambda p: distance_between(tr.current_address, p.address)
+                )
+
+                # load and update
+                tr.load.append(nearest)
+                nearest.in_truck_id = tr.ID
+                tr.current_address = nearest.address
+                eod_pkgs.remove(nearest)
+
+                if not eod_pkgs:  # all done
+                    break
 
 
 # Routing algorithm for delivering packages based on nearest neighbor
@@ -332,18 +336,19 @@ def main():
     # Method to print status of packages
     def print_status(pkg_ID, input_time, lookup_fn):
         package = lookup_fn(pkg_ID) # Find package with associated ID
-        package.update_status(input_time) # Update status based on time
-        eff_address = get_effective_address(package, input_time, lookup_fn)  # Get the address of package if changed
 
         # If ID doesn't exist, print error
         if package is None:
             print("Package not found")
 
+        package.update_status(input_time) # Update status based on time
+        eff_address = get_effective_address(package, input_time, lookup_fn)  # Get the address of package if changed
+
         # Print status of package
         print(
-            f"Package ID: {package.ID} | Address: {eff_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}")
+            f'Package ID: {package.ID} | Address: {eff_address} | Weight: {package.weight} Kilo | Assigned to Truck ID: {package.in_truck_id if package.in_truck_id else 'N/A'}')
         print(
-            f"Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.status == "Delivered" or package.status == "On The Way" else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.status == "Delivered" else "N/A"} | Status: {package.status}\n")
+            f'Deadline: {package.deadline.strftime('%I:%M %p') if package.deadline else "EOD"} | Departure Time: {package.departure_time.strftime('%I:%M %p') if package.status == "Delivered" or package.status == "On The Way" else "N/A"} | Arrival Time: {package.arrival_time.strftime('%I:%M %p') if package.status == "Delivered" else "N/A"} | Status: {package.status}\n')
 
     # Run until told to stop
     while True:
@@ -352,7 +357,7 @@ def main():
         user_input = input("Enter your choice: ").strip()
 
         # Only ask for time when viewing package history
-        if user_input == "1" or user_input == "2":
+        if user_input in {"1", "2"}:
             convert_time = current_time()
             apply_address_correction(packages, convert_time)
 
