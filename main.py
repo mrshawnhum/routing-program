@@ -14,6 +14,7 @@ truck1 = Truck(1, 16, [], 0, HUB_ADDRESS, time(8, 00))
 truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 00))
 truck3 = Truck(3, 16, [], 0, HUB_ADDRESS, time(10, 00))
 
+
 # Upload package data from CSV and insert into a table
 def load_packages(filename="CSV/WGUPS-data.csv"):
     package_table = CreateHashTable(initial_capacity=40)
@@ -46,8 +47,11 @@ def load_packages(filename="CSV/WGUPS-data.csv"):
             package_table.insert(ID, package)
     # Return Hash table
     return package_table
+
+
 # load package table
 package_hash_table = load_packages()
+
 
 # Upload distance/addresses from CSV and create lists for each
 def load_distances_and_addresses(filename):
@@ -76,6 +80,7 @@ address_list, distance_list = load_distances_and_addresses("CSV/WGUPS-distance.c
 # Build the map once for fast distance comparison
 ADDRESS_IDX: dict[str, int] = {addr: i for i, addr in enumerate(address_list)}
 
+
 # Calculate distance using distance list
 def distance_between(address1: str, address2: str):
     # Assign coordinates from address list
@@ -85,12 +90,14 @@ def distance_between(address1: str, address2: str):
     distance = distance_list[x][y]
     return distance if distance is not None else distance_list[y][x]
 
+
 # Packages that are required to be in certain trucks
 PRELOAD = {
     1: [13, 14, 15, 16, 19, 20, 21, 34],
     2: [3, 18, 36, 37, 38],
     3: [6, 9, 25, 26, 28, 31, 32],
 }
+
 
 # Load predefined packages to trucks
 def load_constraint_package():
@@ -105,9 +112,11 @@ def load_constraint_package():
             pkg.in_truck_id = tr.ID
             tr.load.append(pkg)
 
+
 # convert time to minutes since midnight
 def time_to_minutes(t: time) -> int:
     return t.hour * 60 + t.minute
+
 
 # Algorithm to assign packages to trucks based on priority, distance, and available space in truck based on nearest-neighbor concepts
 def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
@@ -186,20 +195,20 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
 
 # Routing algorithm for delivering packages based on nearest neighbor
 def deliver_packages(truck, lookup_fn):
-    truck.current_address = HUB_ADDRESS # Reset location of truck
-    not_delivered = [] # Empty list of packages not delivered
+    truck.current_address = HUB_ADDRESS  # Reset location of truck
+    not_delivered = []  # Empty list of packages not delivered
 
     # Assign packages from truck to list
     for entry in truck.load:
-        if isinstance(entry, Package): # Already a Package object
-            not_delivered.append(entry) # Add to list
+        if isinstance(entry, Package):  # Already a Package object
+            not_delivered.append(entry)  # Add to list
         else:
-            package_entry = lookup_fn(entry) # Assumes it's an ID
-            if package_entry is None: # If ID doesn't exist
-                print(f"[WARNING] {entry} is not a valid package") # Print warning error
+            package_entry = lookup_fn(entry)  # Assumes it's an ID
+            if package_entry is None:  # If ID doesn't exist
+                print(f"[WARNING] {entry} is not a valid package")  # Print warning error
             else:
-                not_delivered.append(package_entry) # Upload to list
-    truck.load.clear() # Clear truck table to load back in order
+                not_delivered.append(package_entry)  # Upload to list
+    truck.load.clear()  # Clear truck table to load back in order
 
     # Record the time package left the hub
     start_time = truck.time
@@ -208,14 +217,16 @@ def deliver_packages(truck, lookup_fn):
 
     # Loop until the load list is empty
     while not_delivered:
-        next_available_package = None # Which package is next to deliver?
-        closest_package_distance = float("inf") # What is the distance between current spot and closest address?
-        next_address = None # Which address is the closest?
+        next_available_package = None  # Which package is next to deliver?
+        closest_package_distance = float("inf")  # What is the distance between current spot and closest address?
+        next_address = None  # Which address is the closest?
 
         # loop through packages in list
         for pkg in not_delivered:
-            effective_address = get_effective_address(pkg, truck.time, lookup_fn) # Find package's address if different from original (relevalent for  ID #9)
-            distance = distance_between(truck.current_address, effective_address) # Find distance between where truck is to the package
+            effective_address = get_effective_address(pkg, truck.time,
+                                                      lookup_fn)  # Find package's address if different from original (relevalent for  ID #9)
+            distance = distance_between(truck.current_address,
+                                        effective_address)  # Find distance between where truck is to the package
             # Assign package with least amount of distance
             if distance <= closest_package_distance:
                 closest_package_distance = distance
@@ -237,12 +248,15 @@ def deliver_packages(truck, lookup_fn):
         truck.load.append(next_available_package.ID)
         not_delivered.remove(next_available_package)
 
+
 # Address correction dictionary
-ADDRESS_CORRECTIONS = { 9: (37, time(10, 20))} # pkg 9 copies pkg 37 (actual address) by 10:20 AM
+ADDRESS_CORRECTIONS = {9: (37, time(10, 20))}  # pkg 9 copies pkg 37 (actual address) by 10:20 AM
+
 
 # Address corrector method for package ID 9
 def apply_address_correction(packages, current_time):
-    ct = current_time.time() if isinstance(current_time, datetime) else current_time # Normalize current_time to a time object
+    ct = current_time.time() if isinstance(current_time,
+                                           datetime) else current_time  # Normalize current_time to a time object
 
     # Build or use existing ID; Package map for quick lookups
     if isinstance(packages, dict):
@@ -269,13 +283,16 @@ def apply_address_correction(packages, current_time):
             target_pkg.city = source_pkg.city
             target_pkg.state = source_pkg.state
             target_pkg.zip_code = source_pkg.zip_code
-            print(f"Applied address correction: pkg {target_id} -> {source_pkg.address}, {source_pkg.city}, {source_pkg.state}, {source_pkg.zip_code}")
+            print(
+                f"Applied address correction: pkg {target_id} -> {source_pkg.address}, {source_pkg.city}, {source_pkg.state}, {source_pkg.zip_code}")
         else:
             pass
 
+
 # Helper method for finding if addresses were corrected
 def get_effective_address(pkg, current_time, lookup_fn):
-    ct = current_time.time() if isinstance(current_time, datetime) else current_time # Normalize current_time to a time object
+    ct = current_time.time() if isinstance(current_time,
+                                           datetime) else current_time  # Normalize current_time to a time object
 
     # If correction applys, follow correction
     rule = ADDRESS_CORRECTIONS.get(pkg.ID)
@@ -287,12 +304,13 @@ def get_effective_address(pkg, current_time, lookup_fn):
 
     return pkg.original_address
 
+
 # Main function
 def main():
     load_constraint_package()  # Run predefined package program
-    fleet = [truck1, truck2, truck3] # Current fleet list of trucks
-    packages = [pkg for bucket in package_hash_table.table for (_, pkg) in bucket] # Package list to illiterate through
-    assign_packages_to_trucks(fleet, packages) # Assign remaining packages to trucks
+    fleet = [truck1, truck2, truck3]  # Current fleet list of trucks
+    packages = [pkg for bucket in package_hash_table.table for (_, pkg) in bucket]  # Package list to illiterate through
+    assign_packages_to_trucks(fleet, packages)  # Assign remaining packages to trucks
 
     # Run delivery program for 1st & 2nd truck
     deliver_packages(truck1, package_hash_table.lookup)
@@ -301,10 +319,11 @@ def main():
     # Since there are only two drivers but three truck, 3rd truck departure won't leave until there is a driver available
     # Helper method for updating when 3rd truck leaves
     def update_departure(returning_truck, truck_at_hub):
-        return_distance = distance_between(returning_truck.current_address, HUB_ADDRESS) # Distance from last package address to hub
-        returning_truck.mileage += return_distance # Add distance it took to get back to hub
-        returning_truck.time += returning_truck.travel_time(return_distance) # Update time it took to get there
-        returning_truck.current_address = HUB_ADDRESS # Truck is now parked at hub
+        return_distance = distance_between(returning_truck.current_address,
+                                           HUB_ADDRESS)  # Distance from last package address to hub
+        returning_truck.mileage += return_distance  # Add distance it took to get back to hub
+        returning_truck.time += returning_truck.travel_time(return_distance)  # Update time it took to get there
+        returning_truck.current_address = HUB_ADDRESS  # Truck is now parked at hub
 
         # Update when 3rd truck left
         depart_time = returning_truck.time
@@ -340,13 +359,13 @@ def main():
 
     # Method to print status of packages
     def print_status(pkg_ID, input_time, lookup_fn):
-        package = lookup_fn(pkg_ID) # Find package with associated ID
+        package = lookup_fn(pkg_ID)  # Find package with associated ID
 
         # If ID doesn't exist, print error
         if package is None:
             print("Package not found")
 
-        package.update_status(input_time) # Update status based on time
+        package.update_status(input_time)  # Update status based on time
         eff_address = get_effective_address(package, input_time, lookup_fn)  # Get the address of package if changed
 
         # Print status of package
@@ -381,7 +400,7 @@ def main():
 
             # Third option = truck summary
             case "3":
-                truck_locator = input("Enter your truck ID: ").strip() # Ask for Truck ID to view summary
+                truck_locator = input("Enter your truck ID: ").strip()  # Ask for Truck ID to view summary
 
                 # If Truck ID is invalid, print error
                 try:
@@ -389,14 +408,16 @@ def main():
                     found_truck = None
                     for truck in fleet:
                         total += truck.mileage
-                        print(f"Truck {truck.ID} departed at {truck.departure_time.strftime('%I:%M %p')} & drove {truck.mileage} miles")
+                        print(
+                            f"Truck {truck.ID} departed at {truck.departure_time.strftime('%I:%M %p')} & drove {truck.mileage} miles")
                         if truck.ID == int(truck_locator):
                             found_truck = truck
 
                     print(f"Total mileage driven: {total} miles\n")
 
                     print("Summary of chosen truck:")
-                    print(f'ID: {found_truck.ID}, Load: {found_truck.load}, Mileage: {found_truck.mileage}, Departure Time: {found_truck.departure_time.strftime('%I:%M %p')}\n')
+                    print(
+                        f'ID: {found_truck.ID}, Load: {found_truck.load}, Mileage: {found_truck.mileage}, Departure Time: {found_truck.departure_time.strftime('%I:%M %p')}\n')
 
                 except ValueError:
                     raise ValueError("Please enter a valid truck ID")
@@ -405,6 +426,7 @@ def main():
             case "4":
                 print("Thank you for using WGUPS Routing Program!")
                 break
+
 
 # Run Program
 if __name__ == "__main__":
