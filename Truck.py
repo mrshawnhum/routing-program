@@ -5,6 +5,7 @@ from datetime import timedelta, datetime
 class Truck:
     def __init__(self, ID, capacity, load, mileage, current_address, departure_time):
         self.ID = ID # Truck ID
+        self.driver_ID = None
         self.capacity = capacity # Limit that truck can carry
         self.speed = 18 # Set speed of truck
         self.load = load # How many packages are in the truck
