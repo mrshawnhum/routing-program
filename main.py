@@ -15,7 +15,7 @@ truck2 = Truck(2, 16, [], 0, HUB_ADDRESS, time(9, 00))
 truck3 = Truck(3, 16, [], 0, HUB_ADDRESS, time(10, 00))
 
 
-# Upload package data from CSV and insert into a table
+# Upload package data from CSV and insert into a package table
 def load_packages(filename="CSV/WGUPS-data.csv"):
     package_table = CreateHashTable(initial_capacity=40)
 
@@ -107,8 +107,10 @@ def load_constraint_package():
         ids = PRELOAD.get(tr.ID, [])
         for pid in ids:
             pkg = package_hash_table.lookup(pid)
+            # Skip if package doesn't exist
             if pkg is None:
                 continue
+            # Assign ID of truck it's in and load to truck
             pkg.in_truck_id = tr.ID
             tr.load.append(pkg)
 
@@ -124,7 +126,7 @@ def assign_packages_to_trucks(fleet: List["Truck"], packages: List["Package"]):
     def deadline_min(pkg: Package):
         return (pkg.deadline.hour * 60 + pkg.deadline.minute) if pkg.deadline else 23 * 60 + 59
 
-    # filter out packages already loaded into trucks and split tables with deadline vs EOD deadline
+    # filter out packages already loaded into trucks and split tables into deadline vs EOD deadline
     preloaded = {p.ID for t in fleet for p in t.load}
     timed_pkgs = [p for p in packages if p.ID not in preloaded and p.deadline]
     eod_pkgs = [p for p in packages if p.ID not in preloaded and not p.deadline]
@@ -404,21 +406,25 @@ def main():
 
                 # If Truck ID is invalid, print error
                 try:
-                    total = 0
-                    found_truck = None
+                    total_mileage = 0 # Store total mileage
+                    found_truck = None # Store searched truck
                     for truck in fleet:
-                        total += truck.mileage
+                        total_mileage += truck.mileage # Add truck mileage to total
+                        # Print each truck's departure and mileage
                         print(
                             f"Truck {truck.ID} departed at {truck.departure_time.strftime('%I:%M %p')} & drove {truck.mileage} miles")
+                        # When searched truck located, stor eit
                         if truck.ID == int(truck_locator):
                             found_truck = truck
 
-                    print(f"Total mileage driven: {total} miles\n")
+                    print(f"Total mileage driven: {total_mileage} miles\n") # Print total mileage
 
+                    # Print truck being searched for
                     print("Summary of chosen truck:")
                     print(
                         f'ID: {found_truck.ID}, Load: {found_truck.load}, Mileage: {found_truck.mileage}, Departure Time: {found_truck.departure_time.strftime('%I:%M %p')}\n')
 
+                # Print error if invalid truck ID
                 except ValueError:
                     raise ValueError("Please enter a valid truck ID")
 
